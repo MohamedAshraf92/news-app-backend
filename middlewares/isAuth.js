@@ -11,7 +11,6 @@ const isAuth = (req, res, next) => {
         "Unauthorized",
         "User not authenticated!"
       );
-      res.status(400).json(error);
       throw error;
     }
 
@@ -24,15 +23,12 @@ const isAuth = (req, res, next) => {
         "Unauthorized",
         "User not authenticated!"
       );
-      res.status(401).json(error);
       throw error;
     }
     req.userId = decodedToken.userId;
     next();
-  } catch (err) {
-    err.statusCode = 500;
-    res.status(500).json({ message: err.message });
-    throw err;
+  } catch (error) {
+    res.status(error.status).json(error);
   }
 };
 
