@@ -1,14 +1,8 @@
-import Ajv from "ajv";
-import addFormats from "ajv-formats";
-
 import User from "../models/user.js";
 import { getAllSources, getSubscribedNews } from "../APIs/news.js";
 import CustomError from "../helpers/customError.js";
 import validateSchema from "../helpers/validateSchema.js";
 import { subscribtionBodySchema } from "../schemas/newsSchemas.js";
-
-const ajv = new Ajv();
-addFormats(ajv);
 
 export const allSources = async (req, res, next) => {
   try {
