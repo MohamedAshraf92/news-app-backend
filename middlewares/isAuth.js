@@ -15,8 +15,8 @@ const isAuth = (req, res, next) => {
     }
 
     const token = authHeader.split(" ")[1];
-    let decodedToken;
-    decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
     if (!decodedToken) {
       const error = new CustomError(
         401,
@@ -28,7 +28,15 @@ const isAuth = (req, res, next) => {
     req.userId = decodedToken.userId;
     next();
   } catch (error) {
-    res.status(error.status).json(error);
+    if (error.name === "TokenExpiredError") {
+      const expiredError = new CustomError(
+        401,
+        "EXPIRED_TOKEN",
+        "Token is expired!"
+      );
+      return res.status(expiredError.statusCode).json(expiredError);
+    }
+    return res.status(error.statusCode).json(error);
   }
 };
 

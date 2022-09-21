@@ -22,7 +22,7 @@ export const login = async (req, res, next) => {
     };
     res.status(200).json({ token, user: sentUser });
   } catch (error) {
-    res.status(error.status).json(error);
+    res.status(error.statusCode).json(error);
   }
 };
 
@@ -35,6 +35,6 @@ export const addUser = async (req, res, next) => {
     const createdUser = await User.create(req.body);
     res.status(201).json({ message: "User created!", userId: createdUser._id });
   } catch (error) {
-    res.status(error.status).json(error);
+    res.status(error.statusCode).json(error);
   }
 };

@@ -3,6 +3,7 @@ import { getAllSources, getSubscribedNews } from "../APIs/news.js";
 import CustomError from "../helpers/customError.js";
 import validateSchema from "../helpers/validateSchema.js";
 import { subscribtionBodySchema } from "../schemas/newsSchemas.js";
+import redisClient from "../redis/redisInstance.js";
 
 export const allSources = async (req, res, next) => {
   try {
@@ -14,7 +15,7 @@ export const allSources = async (req, res, next) => {
     await Promise.all(mappedSources);
     res.status(200).json(mappedSources);
   } catch (error) {
-    res.status(error.status).json(error);
+    res.status(error.statusCode).json(error);
   }
 };
 
@@ -40,9 +41,10 @@ export const subscribeToSource = async (req, res, next) => {
       { _id: userId },
       { subscribedSources: updatedSubscribedSources }
     );
+    await redisClient.del(userId);
     res.status(201).json({ message: `Subscribed successfully to ${sourceId}` });
   } catch (error) {
-    res.status(error.status).json(error);
+    res.status(error.statusCode).json(error);
   }
 };
 
@@ -68,11 +70,12 @@ export const unsubscribeToSource = async (req, res, next) => {
       { _id: userId },
       { subscribedSources: filteredSources }
     );
+    await redisClient.del(userId);
     res
       .status(201)
       .json({ message: `Unsubscribed successfully to ${sourceId}` });
   } catch (error) {
-    res.status(error.status).json(error);
+    res.status(error.statusCode).json(error);
   }
 };
 
@@ -88,9 +91,17 @@ export const getSubscribedHeadlines = async (req, res, next) => {
       );
     }
     const sources = subscribedSources.toString();
-    const subscribedHeadlines = await getSubscribedNews(sources);
-    res.status(200).json(subscribedHeadlines);
+    const cachedNews = await redisClient.get(userId);
+    if (cachedNews) {
+      const parsedNews = JSON.parse(cachedNews);
+      res.status(200).json(parsedNews);
+    } else {
+      const subscribedHeadlines = await getSubscribedNews(sources);
+      redisClient.set(userId, JSON.stringify(subscribedHeadlines));
+      redisClient.expire(userId, 600);
+      res.status(200).json(subscribedHeadlines);
+    }
   } catch (error) {
-    res.status(error.status).json(error);
+    res.status(error.statusCode).json(error);
   }
 };
